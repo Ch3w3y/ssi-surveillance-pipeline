@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 FIXTURE = "tests/smoke/fixtures/synthetic_notes.csv"
+EXPECTED_ROWS = 10  # number of rows in synthetic_notes.csv
 
 
 @pytest.fixture(scope="module")
@@ -21,10 +22,10 @@ def test_pipeline_completes(results):
     assert results is not None
 
 def test_all_rows_present(results):
-    assert len(results) == len(pd.read_csv(FIXTURE))
+    assert len(results) == EXPECTED_ROWS
 
 def test_mode_is_structured_only(results):
-    assert "structured_only" in results["processing_mode"].values
+    assert (results["processing_mode"] == "structured_only").all()
 
 def test_classified_rows_are_rule_based(results):
     flag_vals = {
@@ -32,9 +33,11 @@ def test_classified_rows_are_rule_based(results):
         "missing_note_date", "invalid_dates", "insufficient_data",
     }
     classified = results[~results["ssi_classification"].isin(flag_vals)]
+    assert len(classified) > 0, "No classified rows found — all rows were flagged"
     for zone in classified["confidence_zone"].dropna():
         assert zone == "rule_based"
 
 def test_t84_5_detected_as_ssi(results):
     row = results[results["episode_id"] == "E004"]
+    assert not row.empty, "E004 not found in results"
     assert row.iloc[0]["ssi_classification"] in ("deep", "organ_space")

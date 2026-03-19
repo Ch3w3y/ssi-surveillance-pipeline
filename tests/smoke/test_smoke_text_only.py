@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 FIXTURE = "tests/smoke/fixtures/synthetic_notes.csv"
+EXPECTED_ROWS = 10  # number of rows in synthetic_notes.csv
 VALID_LABELS = {
     "none", "superficial", "deep", "organ_space", "out_of_scope",
     "outside_window", "missing_operation_date", "missing_note_date",
@@ -16,7 +17,6 @@ VALID_LABELS = {
 
 
 @pytest.fixture(scope="module")
-@pytest.mark.requires_model
 def results():
     from src.pipeline.run import SSIPipeline
     pipeline = SSIPipeline({
@@ -30,7 +30,7 @@ def results():
 
 @pytest.mark.requires_model
 def test_all_rows_in_output(results):
-    assert len(results) == len(pd.read_csv(FIXTURE))
+    assert len(results) == EXPECTED_ROWS
 
 @pytest.mark.requires_model
 def test_required_columns(results):
@@ -53,14 +53,17 @@ def test_probs_sum_to_one(results):
 @pytest.mark.requires_model
 def test_out_of_scope_flagged(results):
     oos = results[results["episode_id"] == "E007"]
+    assert not oos.empty, "E007 not found in results"
     assert oos.iloc[0]["ssi_classification"] == "out_of_scope"
 
 @pytest.mark.requires_model
 def test_missing_date_flagged(results):
     row = results[results["episode_id"] == "E008"]
+    assert not row.empty, "E008 not found in results"
     assert row.iloc[0]["ssi_classification"] == "missing_operation_date"
 
 @pytest.mark.requires_model
 def test_outside_window_flagged(results):
     row = results[results["episode_id"] == "E010"]
+    assert not row.empty, "E010 not found in results"
     assert row.iloc[0]["ssi_classification"] == "outside_window"
