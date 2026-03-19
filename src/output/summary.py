@@ -50,7 +50,7 @@ def generate_summary(df: pd.DataFrame, run_date: str, thresholds: dict) -> str:
         f"  Superficial SSI  : {counts['superficial']:>5,}  ({100*counts['superficial']/n_valid:.2f}%)" if n_valid else "  Superficial SSI  :     0",
         f"  Deep SSI         : {counts['deep']:>5,}  ({100*counts['deep']/n_valid:.2f}%)" if n_valid else "  Deep SSI         :     0",
         f"  Organ/Space SSI  : {counts['organ_space']:>5,}  ({100*counts['organ_space']/n_valid:.2f}%)" if n_valid else "  Organ/Space SSI  :     0",
-        f"  Overall SSI rate :  {100*rate:.2f}% (95% CI: {100*lo:.2f}-{100*hi:.2f}%)",
+        f"  Overall SSI rate :  {100*rate:.2f}% (95% CI: {100*lo:.2f}-{100*hi:.2f}%)" if n_valid else "  Overall SSI rate :  N/A (no valid episodes)",
         "",
         f"Review-required (borderline): {n_review:,} episodes",
         "",

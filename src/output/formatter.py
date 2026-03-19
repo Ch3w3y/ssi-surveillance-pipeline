@@ -17,10 +17,11 @@ OUTPUT_COLUMNS = [
 
 def format_linelist(df: pd.DataFrame) -> pd.DataFrame:
     """Select and order columns for the full line list output."""
+    df = df.copy()
     for col in OUTPUT_COLUMNS:
         if col not in df.columns:
             df[col] = ""
-    return df[OUTPUT_COLUMNS].copy()
+    return df[OUTPUT_COLUMNS]
 
 
 def filter_mdt_review(df: pd.DataFrame) -> pd.DataFrame:
