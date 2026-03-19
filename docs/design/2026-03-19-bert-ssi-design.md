@@ -43,7 +43,7 @@ All classifications follow ECDC HAI-Net SSI Protocol v2.2. The surveillance wind
 - **Deep Incisional SSI:** within 30 days (no implant) or **1 year** (implant in situ)
 - **Organ/Space SSI:** within 30 days (no implant) or **1 year** (implant in situ)
 
-Since all in-scope procedures (hip/knee arthroplasty) involve implants, deep incisional and organ/space SSI surveillance windows extend to **1 year post-operatively**. `days_post_op` is computed from `operation_date` and `note_date` and gates which ECDC classes are clinically possible prior to model scoring.
+Since all in-scope procedures (hip/knee arthroplasty, W37–W47) involve prosthetic implants, deep incisional and organ/space SSI surveillance windows extend to **1 year post-operatively**. `days_post_op` is computed from `operation_date` and `note_date` and gates which ECDC classes are clinically possible prior to model scoring. See Section 7.5 for `days_post_op` computation and edge case handling.
 
 ### 3.1 SSI Type Definitions
 
@@ -87,8 +87,8 @@ The pipeline has four sequential stages. NER and classification run in parallel 
 │  PREPROCESSOR                                                   │
 │  • Input validation and bad-row flagging                        │
 │  • Text cleaning (NHS encoding artefacts, whitespace)           │
-│  • Multi-column text concatenation (Mode 2)                     │
-│  • days_post_op computation                                     │
+│  • Multi-column text concatenation (input format B)             │
+│  • days_post_op computation with edge case handling             │
 │  • ECDC window gating                                           │
 │  • Section detection (impression, examination, plan)            │
 └──────────────┬──────────────────────────┬───────────────────────┘
@@ -113,15 +113,26 @@ The pipeline has four sequential stages. NER and classification run in parallel 
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Operating Modes
+### 4.2 Operating Modes and Input Format Variants
 
-The pipeline auto-detects the operating mode from the columns present in the input CSV, or it can be set explicitly in `config.yaml`.
+Two orthogonal choices determine pipeline behaviour:
 
-| Mode | Inputs Required | Components Active |
+**Processing mode** (how the episode is classified):
+
+| Processing Mode | Condition | Components Active |
 |---|---|---|
-| `text_only` | Free text + dates | Preprocessor → NER + classifier → Output |
-| `structured_only` | ICD-10 codes + dates | Preprocessor → ICD-10 rule engine → Output |
-| `hybrid` *(future)* | Both | All components; structured features prepended as tokens |
+| `text_only` | ≥1 text column present | Preprocessor → NER + classifier → Output |
+| `structured_only` | No text columns present; `icd10_codes` present | Preprocessor → ICD-10 rule engine → Output |
+| `hybrid` *(future)* | Both text and `icd10_codes` present | All components |
+
+**Input format** (how text columns are structured):
+
+| Input Format | Columns | Notes |
+|---|---|---|
+| Format A | Single `note_text` column | Pre-concatenated; used directly |
+| Format B | Multiple named text columns | Concatenated by pipeline in configured order |
+
+Both Format A and Format B can feed into `text_only` or `hybrid` processing modes. Processing mode is auto-detected from column presence, or set explicitly in `config.yaml` via `processing_mode`.
 
 The `structured_only` mode deliberately replicates the capability of existing administrative data-based surveillance, providing a direct performance comparator against `text_only` mode.
 
@@ -131,7 +142,9 @@ The `structured_only` mode deliberately replicates the capability of existing ad
 
 ### 5.1 Framework
 
-`MedSpaCy` with the `ConText` algorithm for assertion detection. Extended with custom orthopaedic entity rules covering NHS UK spelling variants, procedure-specific vocabulary, and common dictation artefacts.
+`MedSpaCy` (Python package, installed via `pip install medspacy`) with the `ConText` algorithm for assertion detection. MedSpaCy extends spaCy and does not have a HuggingFace model card — it is installed as a Python package, not downloaded via the HuggingFace Hub.
+
+The underlying spaCy language model used for tokenisation and base NER is `en_core_sci_sm` from the `scispaCy` package (installed separately via `pip install scispacy` and the scispaCy release URL). MedSpaCy wraps this spaCy pipeline and adds the ConText component and custom rule matchers on top. The relationship is: `scispaCy (en_core_sci_sm)` → base tokenisation and entity recognition → `MedSpaCy ConText` → assertion status → custom `entity_rules.py` patterns → final entity list.
 
 ### 5.2 Entity Schema
 
@@ -187,6 +200,8 @@ Entity rules are defined in `src/ner/entity_rules.py` and are intended to be ext
 
 **Comparison baseline:** `emilyalsentzer/Bio_ClinicalBERT` — trained on the same fine-tuning data for ablation comparison. Evaluating both models in the paper quantifies the architectural gain from the ModernBERT design and contributes downstream task benchmarks for Clinical_ModernBERT to the community (currently absent from the model card).
 
+**Expected hardware and throughput:** On a standard NHS workstation (Intel Core i7, 16 GB RAM, CPU only), estimated throughput is approximately 8–15 notes per minute for Clinical_ModernBERT with the 8,192 token window. A weekly batch of 500 orthopaedic episodes would complete in approximately 35–60 minutes. Minimum RAM: 8 GB (model + tokeniser + batch overhead). For users with access to a GPU (CUDA), throughput increases to approximately 100–200 notes per minute. These figures should be updated with benchmarks on reference hardware prior to publication.
+
 ### 6.2 Input Construction
 
 Structured metadata is prepended as special tokens before the note text:
@@ -205,36 +220,45 @@ Linear layer over `[CLS]` token → 4 logits → softmax → calibrated probabil
 P(none) + P(superficial) + P(deep) + P(organ_space) = 1.0
 ```
 
-Temperature scaling is applied after fine-tuning to calibrate probabilities. Calibration is essential for the threshold-based MDT triage workflow — raw softmax scores are not reliable probability estimates without it.
+**Temperature scaling** is applied after fine-tuning. A dedicated calibration split (10% of training data, held out from fine-tuning) is used for temperature optimisation. The calibration split must not overlap with the gold-standard evaluation set. Temperature scaling is implemented in `src/classifier/calibration.py`. Calibration is essential for the threshold-based MDT triage workflow — raw softmax scores are not reliable probability estimates without it.
 
 ### 6.4 ECDC Post-Softmax Gating
 
-Deterministic rules applied after calibration enforce clinical validity:
-- `days_post_op > 365`: zero and renormalise `P(deep)` and `P(organ_space)`
-- `days_post_op > 30` AND no implant procedure (not applicable to current scope but included for future extensibility)
-- These rules are unconditional — they cannot be overridden by model confidence
+Deterministic rules applied after calibration enforce clinical validity. For all in-scope procedures (W37–W47), implant presence is derived from `procedure_code` — all codes in scope involve prosthetic implants, so `implant = True` for the entire current scope.
+
+Gating rules:
+- `days_post_op > 365`: zero `P(deep)` and `P(organ_space)`, renormalise remaining probabilities
+- `days_post_op > 30` AND `implant = False`: zero all SSI classes, set `P(none) = 1.0` (not applicable to current W37–W47 scope; included for extensibility when non-implant procedure codes are added)
+
+These rules are unconditional — they cannot be overridden by model confidence.
 
 ### 6.5 Threshold Logic
 
-| Zone | Condition | Action |
-|---|---|---|
-| `auto_negative` | `P(none) ≥ 0.85` | No SSI — excluded from review list |
-| `review_required` | `0.40 ≤ max(SSI classes) < 0.85` | Flagged for MDT review |
-| `auto_positive` | `max(SSI classes) ≥ 0.85` | Classified — included in line list |
+The three zones are evaluated in priority order. `review_required` is the catch-all for any row that clears neither auto-threshold:
+
+| Priority | Zone | Condition | `confidence_zone` | `review_required` |
+|---|---|---|---|---|
+| 1 | `auto_negative` | `P(none) ≥ 0.85` | `auto_negative` | `False` |
+| 2 | `auto_positive` | `max(P(superficial), P(deep), P(organ_space)) ≥ 0.85` | `auto_positive` | `False` |
+| 3 (catch-all) | `review_required` | All other rows | `review_required` | `True` |
+
+`review_required` is a Boolean column derived from `confidence_zone == 'review_required'`. The two columns are always consistent by construction. The catch-all ensures every row is assigned a zone regardless of probability distribution shape — including low-confidence rows where `P(none) < 0.85` and `max(SSI) < 0.40`.
 
 All thresholds are configurable in `config.yaml`. Surveillance teams can adjust the sensitivity/specificity trade-off for their local context without touching code.
 
 ### 6.6 Structured-Only Mode (ICD-10 Rule Engine)
 
-When no free text is available, a deterministic rule engine classifies episodes by ICD-10 code presence:
+When no free text is available, a deterministic rule engine classifies episodes using **NHS ICD-10 (WHO fifth edition)** codes as recorded in HES, PEDW, and SMR. Note: these differ from ICD-10-CM (US clinical modification), which uses additional fifth-character subdivisions. The MIMIC-IV training data uses ICD-10-CM; this distinction is handled explicitly in the training pipeline (see Section 9.1).
 
-| ICD-10 Code(s) | SSI Signal |
+| NHS ICD-10 Code | SSI Signal |
 |---|---|
 | `T81.4` | Infection following procedure |
-| `T84.50`–`T84.54` | Prosthetic joint infection (deep / organ-space) |
+| `T84.5` | Infection/inflammatory reaction due to internal joint prosthesis |
 | `T84.6` | Infection due to internal fixation device |
-| `L02`, `L03` | Superficial wound infection / cellulitis |
-| `M00.8`, `M00.9` | Pyogenic arthritis (organ-space proxy) |
+| `L02` | Cutaneous abscess / furuncle (superficial) |
+| `L03` | Cellulitis and acute lymphangitis (superficial) |
+| `M00.8` | Arthritis due to specified bacterial agents (organ-space proxy) |
+| `M00.9` | Pyogenic arthritis, unspecified (organ-space proxy) |
 
 Combined with ECDC window gating and OPCS-4 procedure validation, this produces a classification. Sensitivity is expected to be substantially lower than text-based classification, consistent with published literature (AUC ~0.55 for ICD codes vs ~0.99 for free text). This comparison is a primary output of the evaluation notebooks.
 
@@ -242,12 +266,12 @@ Combined with ECDC window gating and OPCS-4 procedure validation, this produces 
 
 ## 7. Input Data Specification
 
-### 7.1 Mode 1 — Pre-concatenated Text
+### 7.1 Format A — Pre-concatenated Text
 
 | Column | Type | Required | Description |
 |---|---|---|---|
 | `patient_id` | string | ✓ | Pseudonymised identifier (e.g. hashed NHS number) |
-| `episode_id` | string | recommended | Unique episode identifier for linkage |
+| `episode_id` | string | ✓ | Unique episode identifier for clinical linkage — see Section 7.4 |
 | `operation_date` | YYYY-MM-DD | ✓ | Date of index surgical procedure |
 | `note_date` | YYYY-MM-DD | ✓ | Date this note was written |
 | `procedure_code` | OPCS-4 | ✓ | See Section 7.3 |
@@ -255,9 +279,9 @@ Combined with ECDC window gating and OPCS-4 procedure validation, this produces 
 | `icd10_codes` | pipe-separated | optional | e.g. `Z96.6\|M16.1` — for future hybrid mode |
 | `hospital_site` | string | optional | Site identifier for multi-site stratification |
 
-### 7.2 Mode 2 — Multiple Named Text Columns (administrative data style)
+### 7.2 Format B — Multiple Named Text Columns (administrative data style)
 
-All columns from Mode 1 apply, with `note_text` replaced by any combination of:
+All columns from Format A apply, with `note_text` replaced by any combination of:
 
 | Column | Required | Description |
 |---|---|---|
@@ -287,30 +311,51 @@ text_columns:
 
 ### 7.3 OPCS-4 Procedure Codes in Scope
 
-| Code | Description |
-|---|---|
-| `W37` | Total prosthetic replacement of hip joint NEC |
-| `W38` | Total prosthetic replacement of hip joint using cement |
-| `W39` | Prosthetic replacement of head of femur NEC |
-| `W40` | Prosthetic replacement of head of femur using cement |
-| `W41` | Revision of prosthetic replacement of hip joint NEC |
-| `W42` | Revision of prosthetic replacement of hip joint using cement |
-| `W43` | Primary total prosthetic replacement of knee joint NEC |
-| `W44` | Primary total prosthetic replacement of knee joint using cement |
-| `W45` | Revision of prosthetic replacement of knee joint NEC |
-| `W46` | Revision of prosthetic replacement of knee joint using cement |
-| `W47` | Other prosthetic replacement of knee joint |
+All W37–W47 codes involve prosthetic implants; the 1-year ECDC surveillance window applies to all.
+
+| Code | Description | Procedure type |
+|---|---|---|
+| `W37` | Total prosthetic replacement of hip joint NEC | Hip total |
+| `W38` | Total prosthetic replacement of hip joint using cement | Hip total |
+| `W39` | Prosthetic replacement of head of femur NEC | Hip hemi |
+| `W40` | Prosthetic replacement of head of femur using cement | Hip hemi |
+| `W41` | Revision of prosthetic replacement of hip joint NEC | Hip revision |
+| `W42` | Revision of prosthetic replacement of hip joint using cement | Hip revision |
+| `W43` | Primary total prosthetic replacement of knee joint NEC | Knee total |
+| `W44` | Primary total prosthetic replacement of knee joint using cement | Knee total |
+| `W45` | Revision of prosthetic replacement of knee joint NEC | Knee revision |
+| `W46` | Revision of prosthetic replacement of knee joint using cement | Knee revision |
+| `W47` | Other prosthetic replacement of knee joint | Knee other |
+
+W39 and W40 (hemiarthroplasty — prosthetic replacement of the femoral head) are included in scope. These procedures are mechanistically distinct from total hip replacement (commonly performed for fractured neck of femur). Performance is reported as a separate evaluation subgroup (Section 10.3).
 
 Episodes with procedure codes outside this list are flagged `out_of_scope` in the output rather than silently dropped.
 
-### 7.4 Bad-Row Handling
+### 7.4 `episode_id` Requirement and Fallback
+
+`episode_id` is a **required** column. It is used by MDT reviewers to retrieve the original episode from clinical systems; a null `episode_id` in the review list renders it clinically unusable. If `episode_id` is absent from the input, the pipeline will raise a validation error and halt before processing. A surrogate of `patient_id` + `note_date` is not an acceptable substitute because it does not guarantee uniqueness across multi-episode patients.
+
+### 7.5 `days_post_op` Computation and Edge Cases
+
+`days_post_op` is computed as `(note_date - operation_date).days` (integer, calendar days).
+
+| Condition | Behaviour |
+|---|---|
+| `note_date == operation_date` | `days_post_op = 0` — valid; same-day notes (e.g. intraoperative) are within the ECDC window |
+| `note_date < operation_date` | Row flagged `invalid_dates`, excluded from classification; warning logged |
+| `operation_date` null | Row flagged `missing_operation_date`, excluded from classification |
+| `note_date` null | Row flagged `missing_note_date`, excluded from classification |
+
+### 7.6 Bad-Row Handling Summary
 
 | Condition | Flag Applied |
 |---|---|
-| `operation_date` missing | `missing_operation_date` — excluded from ECDC gating |
-| All text fields null | `insufficient_data` — excluded from NER/classifier |
-| Procedure code out of scope | `out_of_scope` — passed through to output with flag |
-| `days_post_op` outside all ECDC windows | `outside_window` — included with flag, no SSI classification |
+| `operation_date` missing | `missing_operation_date` |
+| `note_date` missing | `missing_note_date` |
+| `note_date < operation_date` | `invalid_dates` |
+| All text fields null (text modes) | `insufficient_data` |
+| Procedure code out of scope | `out_of_scope` |
+| `days_post_op > 365` | `outside_window` |
 
 All flagged rows appear in the full line list with their flag in `ssi_classification`. None are silently discarded.
 
@@ -331,17 +376,18 @@ One row per input episode:
 | `days_post_op` | Computed from operation_date and note_date |
 | `procedure_code` | From input |
 | `procedure_description` | Looked up from OPCS-4 reference table |
+| `procedure_type` | Derived: `hip_total` / `hip_hemi` / `hip_revision` / `knee_total` / `knee_revision` / `knee_other` |
 | `hospital_site` | From input |
-| `operating_mode` | `text_only` / `structured_only` / `hybrid` |
-| `ssi_classification` | `none` / `superficial` / `deep` / `organ_space` / `out_of_scope` / `missing_operation_date` / `insufficient_data` / `outside_window` |
-| `p_none` | Calibrated probability (0–1) |
-| `p_superficial` | Calibrated probability (0–1) |
-| `p_deep` | Calibrated probability (0–1) |
-| `p_organ_space` | Calibrated probability (0–1) |
-| `confidence_zone` | `auto_negative` / `review_required` / `auto_positive` |
-| `review_required` | Boolean |
-| `extracted_entities` | Pipe-separated entity:assertion pairs |
-| `entity_snippets` | Pipe-separated text spans that triggered each entity |
+| `processing_mode` | `text_only` / `structured_only` / `hybrid` |
+| `ssi_classification` | `none` / `superficial` / `deep` / `organ_space` / `out_of_scope` / `missing_operation_date` / `missing_note_date` / `invalid_dates` / `insufficient_data` / `outside_window` |
+| `p_none` | Calibrated probability (0–1); null for `structured_only` mode |
+| `p_superficial` | Calibrated probability (0–1); null for `structured_only` mode |
+| `p_deep` | Calibrated probability (0–1); null for `structured_only` mode |
+| `p_organ_space` | Calibrated probability (0–1); null for `structured_only` mode |
+| `confidence_zone` | `auto_negative` / `review_required` / `auto_positive`; `rule_based` for `structured_only` |
+| `review_required` | Boolean — derived from `confidence_zone == 'review_required'` |
+| `extracted_entities` | Pipe-separated entity:assertion pairs; null for `structured_only` mode |
+| `entity_snippets` | Pipe-separated text spans that triggered each entity; null for `structured_only` mode |
 | `ecdc_window_flag` | `within_30d` / `within_1yr` / `outside_window` |
 | `icd10_codes` | From input, passed through |
 
@@ -351,7 +397,7 @@ Subset of the full line list where `review_required = True`. Sorted by maximum S
 
 ### 8.3 Run Summary (`ssi_summary_YYYYMMDD.txt`)
 
-Plain text suitable for pasting into a surveillance report. Includes episode counts, classification breakdown with percentages and 95% confidence intervals, review-required count, operating mode, and threshold settings applied.
+Plain text suitable for pasting into a surveillance report. Includes episode counts, classification breakdown with percentages and 95% confidence intervals, review-required count, processing mode, and threshold settings applied.
 
 ---
 
@@ -361,28 +407,38 @@ Plain text suitable for pasting into a surveillance report. Includes episode cou
 
 **Source:** MIMIC-IV-Note v2.2 (PhysioNet). Requires free registration, CITI training completion, and data use agreement. Access instructions in `training/README.md`.
 
+**Note on coding systems:** MIMIC-IV uses ICD-10-CM (US clinical modification), which includes fifth-character subdivisions not present in NHS ICD-10 (WHO). The training cohort filter uses ICD-10-CM codes (`T84.50`–`T84.54` for prosthetic joint infection); the `structured_only` inference mode uses NHS ICD-10 (`T84.5`). These are clinically equivalent but syntactically different. The training pipeline (`training/mimic_silver_labels.py`) documents this distinction explicitly and uses ICD-10-CM throughout. The inference rule engine (`src/classifier/structured.py`) uses NHS ICD-10 throughout.
+
 **Cohort construction:**
-1. Filter MIMIC-IV by ICD-10 codes indicating postoperative infection: `T81.4`, `T84.5x`, `T84.6`
-2. Filter by orthopaedic procedure codes (ICD-10-PCS or OPCS-4 equivalents)
+1. Filter MIMIC-IV by ICD-10-CM codes indicating postoperative infection: `T81.4`, `T84.50`–`T84.54`, `T84.6`
+2. Filter by orthopaedic procedure codes (ICD-10-PCS equivalents of OPCS-4 W37–W47)
 3. Link to MIMIC-IV-Note discharge summaries and clinical notes for matched episodes
 4. Apply ECDC sub-type heuristics to silver-label positive cases as superficial / deep / organ_space based on note section content and structured fields
 5. Negative cases: episodes with orthopaedic procedures and no SSI-related codes, sampled to correct class imbalance
+6. Reserve 10% as calibration split (for temperature scaling); remainder used for fine-tuning
 
 **Known limitation:** ICD-10 SSI coding in administrative data has published sensitivity ~10-50%. Silver labels will be noisy. The gold-standard evaluation set (Section 9.2) is the authoritative performance measure.
 
 ### 9.2 Gold-Standard Evaluation Set (Manual Annotation)
 
-A held-out set of ~200–500 notes annotated by clinical colleagues using ECDC criteria as the annotation guide (provided in `data/annotations/annotation_guide.md`). Inter-annotator agreement is measured with Cohen's kappa prior to use as evaluation data.
+A held-out set of ~200–500 notes annotated by clinical colleagues using ECDC criteria as the annotation guide (provided in `data/annotations/annotation_guide.md`). The evaluation set is entirely separate from the MIMIC-IV training and calibration data.
+
+**Annotation protocol:**
+- Minimum 2 independent annotators per note
+- Inter-annotator agreement measured with Cohen's kappa; minimum acceptable kappa: **0.70** (substantial agreement) before use as evaluation data
+- Disagreements below this threshold are adjudicated by a senior clinician applying ECDC criteria
+- Adjudication decisions are documented in `data/annotations/adjudication_log.csv`
 
 This set is the primary basis for all performance metrics reported in the associated paper.
 
-### 9.3 Pre-trained Models
+### 9.3 Pre-trained Models and Installation
 
-| Model | HuggingFace ID | Role |
-|---|---|---|
-| Clinical_ModernBERT | `Simonlee711/Clinical_ModernBERT` | Primary classifier backbone |
-| Bio+ClinicalBERT | `emilyalsentzer/Bio_ClinicalBERT` | Ablation comparison baseline |
-| MedSpaCy | `en_core_sci_sm` (scispaCy) | NER base model |
+| Model | Identifier | Installation | Role |
+|---|---|---|---|
+| Clinical_ModernBERT | `Simonlee711/Clinical_ModernBERT` | `pip install transformers` then `AutoModel.from_pretrained(...)` via HuggingFace Hub | Primary classifier backbone |
+| Bio_ClinicalBERT | `emilyalsentzer/Bio_ClinicalBERT` | As above | Ablation comparison baseline |
+| MedSpaCy | n/a (Python package) | `pip install medspacy` | ConText assertion detection framework |
+| scispaCy `en_core_sci_sm` | n/a (spaCy model) | `pip install scispacy` + release URL | Base tokenisation and NER for MedSpaCy |
 
 ---
 
@@ -404,9 +460,9 @@ This set is the primary basis for all performance metrics reported in the associ
 ### 10.3 Subgroup Analyses
 
 - By ECDC SSI type (superficial / deep / organ_space)
-- By procedure type (hip total / hip revision / knee total / knee revision)
+- By procedure type (hip total / hip hemi / hip revision / knee total / knee revision / knee other)
 - By `days_post_op` band (0–30 days / 31–180 days / 181–365 days)
-- By operating mode (`text_only` vs `structured_only`) — primary stakeholder comparison
+- By processing mode (`text_only` vs `structured_only`) — primary stakeholder comparison
 
 ### 10.4 Key Paper Finding
 
@@ -431,10 +487,11 @@ bert_SSI/
 │   ├── processed/                     # Intermediate features — gitignored
 │   ├── annotations/
 │   │   ├── annotation_guide.md        # ECDC criteria annotation instructions
+│   │   ├── adjudication_log.csv       # Annotator disagreement records
 │   │   └── schema.json                # Entity schema definition
 │   └── reference/
 │       ├── opcs4_orthopaedic.csv      # OPCS-4 code reference table
-│       └── icd10_ssi_codes.csv        # ICD-10 SSI signal code reference
+│       └── icd10_ssi_codes.csv        # NHS ICD-10 SSI signal code reference
 │
 ├── src/
 │   ├── __init__.py
@@ -521,7 +578,7 @@ Each module is tested in isolation with mocked inputs. Synthetic note fixtures c
 
 ### 12.2 Smoke Tests
 
-Full pipeline end-to-end runs on a synthetic 20-row CSV, one per operating mode. Validate pipeline completion, output file production, column presence, label validity, and probability sum ≈ 1.0. Do not validate classification accuracy.
+Full pipeline end-to-end runs on a synthetic 20-row CSV, one per processing mode. Validate pipeline completion, output file production, column presence, label validity, and probability sum ≈ 1.0. Do not validate classification accuracy.
 
 ### 12.3 GitHub Actions CI
 
@@ -535,7 +592,7 @@ Triggers on push and pull request to `main`. Matrix: Python 3.9, 3.10, 3.11. Ste
 
 **Training data:** MIMIC-IV-Note (PhysioNet Credentialed Health Data Licence). Users must obtain their own PhysioNet access. No MIMIC data is committed to this repository.
 
-**Pre-trained models:** Clinical_ModernBERT (MIT licence); Bio+ClinicalBERT (MIT licence). Both available via HuggingFace.
+**Pre-trained models:** Clinical_ModernBERT (MIT licence); Bio_ClinicalBERT (MIT licence). Both available via HuggingFace.
 
 ---
 
@@ -545,7 +602,7 @@ Triggers on push and pull request to `main`. Matrix: Python 3.9, 3.10, 3.11. Ste
 - PRAISE SSI Working Group. Automated surveillance for surgical site infections — expert perspectives for implementation. *Antimicrob Resist Infect Control.* 2024. PMC11667888.
 - Bucher et al. Portable Automated Surveillance of Surgical Site Infections Using NLP. *Ann Surg.* 2020. PMC9040555.
 - Danish DL study. Assessing the utility of deep neural networks in detecting superficial SSI from free text EHR data. PMC10801170.
-- Alsentzer et al. Publicly Available Clinical BERT Embeddings. NAACL 2019. (Bio+ClinicalBERT)
+- Alsentzer et al. Publicly Available Clinical BERT Embeddings. NAACL 2019. (Bio_ClinicalBERT)
 - Warner et al. ModernBERT. 2024. (answerdotai/ModernBERT-base)
 - Lee S. Clinical_ModernBERT. HuggingFace. 2025. (Simonlee711/Clinical_ModernBERT)
 - ECDC HAI-Net SSI Protocol v2.2. European Centre for Disease Prevention and Control.
