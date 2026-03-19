@@ -12,11 +12,15 @@ def test_strips_leading_trailing():
 
 def test_normalises_carriage_returns():
     result = clean_text("wound\r\nhealing\rwell")
-    assert "\r" not in result
+    assert result == "wound\nhealing\nwell"
 
 
-def test_removes_null_bytes():
+def test_replaces_null_bytes_with_space():
     assert clean_text("wound\x00healing") == "wound healing"
+
+
+def test_replaces_form_feed_with_space():
+    assert clean_text("wound\x0chealing") == "wound healing"
 
 
 def test_handles_empty_string():

@@ -21,12 +21,12 @@ def compute_days_post_op(operation_date, note_date) -> int | None:
     """
     if operation_date is None or note_date is None:
         return None
-    if pd.isna(operation_date) or pd.isna(note_date):
-        return None
     try:
+        if pd.isna(operation_date) or pd.isna(note_date):
+            return None
         op = pd.to_datetime(operation_date)
         note = pd.to_datetime(note_date)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, Exception):
         return None
     days = (note - op).days
     return days if days >= 0 else None

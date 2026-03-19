@@ -17,6 +17,7 @@ def test_negative_returns_none():
 def test_none_dates_return_none():
     assert compute_days_post_op(None, "2025-01-25") is None
     assert compute_days_post_op("2025-01-15", None) is None
+    assert compute_days_post_op(None, None) is None
 
 
 def test_ecdc_window_within_30d():
