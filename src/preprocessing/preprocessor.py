@@ -1,7 +1,7 @@
 """Preprocessing orchestrator.
 
-Runs: validation → text cleaning → text concatenation → temporal
-features → ECDC window gating → procedure metadata lookup.
+Runs: validation → concatenation → text cleaning → temporal
+features → procedure metadata → ECDC window gating.
 """
 from __future__ import annotations
 
