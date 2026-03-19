@@ -5,9 +5,9 @@
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)
 ![Licence](https://img.shields.io/badge/licence-Apache%202.0-green)
 
-Automated surveillance of Surgical Site Infections (SSI) in orthopaedic hip and knee arthroplasty using transformer-based NLP on post-surgical clinical notes. Implements ECDC HAI-Net SSI definitions with a human-in-the-loop review workflow designed for NHS epidemiological surveillance.
+A population-level surveillance pipeline for Surgical Site Infections (SSI) in orthopaedic hip and knee arthroplasty. Uses transformer-based NLP on post-surgical clinical notes to classify episodes according to ECDC HAI-Net SSI definitions, producing stratified rate estimates and a probability-scored line list for MDT review — designed for integration into NHS epidemiological surveillance workflows.
 
-> **This tool is for epidemiological surveillance only. It is not validated for clinical decision-making or individual patient management.**
+> **Built for epidemiological surveillance.** Classifications support population-level SSI rate monitoring and quality improvement reporting. Outputs are designed for review by surveillance teams and MDTs, consistent with the PRAISE framework for automated infection surveillance in Europe.
 
 ---
 
