@@ -28,6 +28,8 @@ def apply_temperature(logits: np.ndarray, temperature: float) -> np.ndarray:
     Returns:
         1D array of calibrated probabilities summing to 1.0.
     """
+    if temperature <= 0:
+        raise ValueError(f"temperature must be > 0, got {temperature}")
     scaled = logits / temperature
     exp = np.exp(scaled - np.max(scaled))
     return exp / exp.sum()

@@ -17,9 +17,9 @@ def apply_ecdc_gating(probs: dict, days_post_op: int | None) -> dict:
     Returns:
         Gated and renormalised probability dict. Unchanged if days_post_op is None.
     """
+    probs = dict(probs)
     if days_post_op is None:
         return probs
-    probs = dict(probs)
     if days_post_op > 365:
         probs["deep"] = 0.0
         probs["organ_space"] = 0.0

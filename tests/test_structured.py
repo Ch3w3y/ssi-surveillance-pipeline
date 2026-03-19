@@ -7,8 +7,8 @@ def test_t81_4_is_ssi():
     assert engine.classify("T81.4|Z96.6")["ssi_classification"] != "none"
 
 
-def test_t84_5_is_deep_or_organ_space():
-    assert engine.classify("T84.5")["ssi_classification"] in ("deep", "organ_space")
+def test_t84_5_is_organ_space():
+    assert engine.classify("T84.5")["ssi_classification"] == "organ_space"
 
 
 def test_l02_is_superficial():
@@ -31,6 +31,6 @@ def test_confidence_zone_is_rule_based():
     assert engine.classify("T81.4")["confidence_zone"] == "rule_based"
 
 
-def test_hierarchy_deep_over_superficial():
+def test_hierarchy_organ_space_over_superficial():
     result = engine.classify("T84.5|L02")
-    assert result["ssi_classification"] in ("deep", "organ_space")
+    assert result["ssi_classification"] == "organ_space"
