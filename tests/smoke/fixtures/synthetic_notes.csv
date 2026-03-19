@@ -1,0 +1,11 @@
+patient_id,episode_id,operation_date,note_date,procedure_code,note_text,icd10_codes
+P001,E001,2025-01-15,2025-01-25,W38,"Wound healing well. No signs of infection. Antibiotics not required.",Z96.6
+P002,E002,2025-02-01,2025-02-12,W43,"Purulent discharge noted at incision site. Wound erythema and tenderness.",Z96.6
+P003,E003,2025-03-01,2025-03-10,W41,"Query early wound breakdown. Possible dehiscence at medial aspect.",Z96.6
+P004,E004,2025-04-01,2025-04-20,W38,"Joint aspiration: culture positive Staph aureus. Periprosthetic infection.",T84.5|Z96.6
+P005,E005,2024-06-01,2025-06-10,W44,"8 months post knee replacement. Infected synovial fluid on aspiration.",Z96.6
+P006,E006,2025-01-01,2025-01-12,W45,"Satisfactory recovery. Wound clean and dry. No concerns.",Z96.6
+P007,E007,2025-02-15,2025-02-25,W99,"Wound review.",Z96.6
+P008,E008,,2025-03-01,W38,"Wound healing.",Z96.6
+P009,E009,2025-01-01,2024-12-01,W43,"Pre-op assessment.",Z96.6
+P010,E010,2024-01-01,2025-06-01,W38,"Late review. Patient well.",Z96.6
