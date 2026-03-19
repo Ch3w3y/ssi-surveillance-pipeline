@@ -1,0 +1,12 @@
+code,description,procedure_type
+W37,Total prosthetic replacement of hip joint NEC,hip_total
+W38,Total prosthetic replacement of hip joint using cement,hip_total
+W39,Prosthetic replacement of head of femur NEC,hip_hemi
+W40,Prosthetic replacement of head of femur using cement,hip_hemi
+W41,Revision of prosthetic replacement of hip joint NEC,hip_revision
+W42,Revision of prosthetic replacement of hip joint using cement,hip_revision
+W43,Primary total prosthetic replacement of knee joint NEC,knee_total
+W44,Primary total prosthetic replacement of knee joint using cement,knee_total
+W45,Revision of prosthetic replacement of knee joint NEC,knee_revision
+W46,Revision of prosthetic replacement of knee joint using cement,knee_revision
+W47,Other prosthetic replacement of knee joint,knee_other

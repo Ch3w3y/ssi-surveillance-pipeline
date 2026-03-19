@@ -1,0 +1,21 @@
+processing_mode: auto
+input_format: auto
+text_columns:
+  - field: presenting_complaint
+    header: "PRESENTING COMPLAINT"
+  - field: clinical_findings
+    header: "CLINICAL FINDINGS"
+  - field: diagnosis
+    header: "DIAGNOSIS"
+  - field: management_plan
+    header: "MANAGEMENT PLAN"
+  - field: discharge_summary
+    header: "DISCHARGE SUMMARY"
+model: Simonlee711/Clinical_ModernBERT
+comparison_model: emilyalsentzer/Bio_ClinicalBERT
+thresholds:
+  auto_negative: 0.85
+  auto_positive: 0.85
+opcs4_reference: data/reference/opcs4_orthopaedic.csv
+icd10_reference: data/reference/icd10_ssi_codes.csv
+output_dir: results/
