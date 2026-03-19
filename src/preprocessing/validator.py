@@ -47,7 +47,7 @@ def validate_input(df: pd.DataFrame) -> pd.DataFrame:
     df["validation_flag"] = ""
 
     for idx in df.index:
-        flag = _check_row(df.loc[idx], df.columns.tolist())
+        flag = _check_row(df.loc[idx])
         if flag:
             df.at[idx, "ssi_classification"] = flag
             df.at[idx, "validation_flag"] = flag
@@ -55,7 +55,7 @@ def validate_input(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _check_row(row: pd.Series, columns: list) -> str:
+def _check_row(row: pd.Series) -> str:
     """Return flag string if row is invalid, empty string otherwise."""
     if pd.isna(row.get("operation_date")):
         return "missing_operation_date"
@@ -75,8 +75,10 @@ def _check_row(row: pd.Series, columns: list) -> str:
     if code not in IN_SCOPE_CODES:
         return "out_of_scope"
 
-    present_text_cols = [c for c in TEXT_COLUMNS if c in columns]
-    if all(pd.isna(row.get(c)) for c in present_text_cols):
+    present_text_cols = [c for c in TEXT_COLUMNS if c in row.index]
+    # Only flag insufficient_data when at least one text column is present but all are null.
+    # If zero text columns exist (structured_only mode), do not flag — ICD-10 engine handles it.
+    if present_text_cols and all(pd.isna(row.get(c)) for c in present_text_cols):
         return "insufficient_data"
 
     return ""

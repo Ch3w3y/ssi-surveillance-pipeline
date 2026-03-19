@@ -55,3 +55,19 @@ def test_null_text_flagged():
 def test_same_day_note_valid():
     result = validate_input(make_row(operation_date="2025-01-15", note_date="2025-01-15"))
     assert result.loc[0, "ssi_classification"] != "invalid_dates"
+
+
+def test_validation_flag_matches_ssi_classification_on_invalid_row():
+    result = validate_input(make_row(procedure_code="W99"))
+    assert result.loc[0, "validation_flag"] == "out_of_scope"
+
+
+def test_no_text_columns_not_flagged_as_insufficient():
+    """Structured-only mode: no text columns present should not flag insufficient_data."""
+    df = pd.DataFrame([{
+        "patient_id": "P001", "episode_id": "E001",
+        "operation_date": "2025-01-15", "note_date": "2025-01-25",
+        "procedure_code": "W38", "icd10_codes": "T81.4",
+    }])
+    result = validate_input(df)
+    assert result.loc[0, "ssi_classification"] == ""
