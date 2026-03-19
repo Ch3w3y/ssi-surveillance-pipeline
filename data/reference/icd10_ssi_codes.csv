@@ -1,7 +1,7 @@
 code,signal,ssi_type
-T81.4,infection_following_procedure,any
-T84.5,prosthetic_joint_infection,deep_or_organ_space
-T84.6,internal_fixation_infection,deep_or_organ_space
+T81.4,infection_following_procedure,deep
+T84.5,prosthetic_joint_infection,organ_space
+T84.6,internal_fixation_infection,deep
 L02,cutaneous_abscess,superficial
 L03,cellulitis,superficial
 M00.8,pyogenic_arthritis_specified,organ_space
