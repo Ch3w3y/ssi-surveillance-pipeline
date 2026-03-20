@@ -4,10 +4,14 @@ from src.output.summary import generate_summary
 
 def make_linelist():
     return pd.DataFrame([
-        {"ssi_classification": "none", "processing_mode": "text_only", "review_required": False},
-        {"ssi_classification": "superficial", "processing_mode": "text_only", "review_required": False},
-        {"ssi_classification": "deep", "processing_mode": "text_only", "review_required": True},
-        {"ssi_classification": "out_of_scope", "processing_mode": "text_only", "review_required": False},
+        {"ssi_classification": "none", "processing_mode": "text_only",
+         "review_required": False},
+        {"ssi_classification": "superficial", "processing_mode": "text_only",
+         "review_required": False},
+        {"ssi_classification": "deep", "processing_mode": "text_only",
+         "review_required": True},
+        {"ssi_classification": "out_of_scope", "processing_mode": "text_only",
+         "review_required": False},
     ])
 
 

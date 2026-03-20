@@ -9,9 +9,8 @@ The model is downloaded from HuggingFace Hub on first instantiation (~400 MB).
 Subsequent runs use the local HuggingFace cache.
 """
 from __future__ import annotations
-import numpy as np
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from .calibration import apply_temperature, assign_confidence_zone, DEFAULT_THRESHOLDS
+from .calibration import apply_temperature, DEFAULT_THRESHOLDS
 from .ecdc_gating import apply_ecdc_gating
 
 CLASS_ORDER = ["none", "superficial", "deep", "organ_space"]

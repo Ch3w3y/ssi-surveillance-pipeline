@@ -21,11 +21,14 @@ def results():
 def test_pipeline_completes(results):
     assert results is not None
 
+
 def test_all_rows_present(results):
     assert len(results) == EXPECTED_ROWS
 
+
 def test_mode_is_structured_only(results):
     assert (results["processing_mode"] == "structured_only").all()
+
 
 def test_classified_rows_are_rule_based(results):
     flag_vals = {
@@ -36,6 +39,7 @@ def test_classified_rows_are_rule_based(results):
     assert len(classified) > 0, "No classified rows found — all rows were flagged"
     for zone in classified["confidence_zone"].dropna():
         assert zone == "rule_based"
+
 
 def test_t84_5_detected_as_ssi(results):
     row = results[results["episode_id"] == "E004"]

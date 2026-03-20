@@ -27,7 +27,7 @@ def generate_summary(df: pd.DataFrame, run_date: str, thresholds: dict) -> str:
     n_valid = len(valid)
     counts = {t: int((valid["ssi_classification"] == t).sum()) for t in ["none"] + SSI_TYPES}
     n_ssi = sum(counts[t] for t in SSI_TYPES)
-    n_review = int((df["review_required"] == True).sum())
+    n_review = int(df["review_required"].eq(True).sum())
     rate = n_ssi / n_valid if n_valid > 0 else 0
     lo, hi = _wilson_ci(n_ssi, n_valid)
 
@@ -43,14 +43,22 @@ def generate_summary(df: pd.DataFrame, run_date: str, thresholds: dict) -> str:
         if n:
             lines.append(f"  {flag:<26}: {n:>5,}")
 
+    def _pct(label, key, fmt=".1f"):
+        if n_valid:
+            return f"  {label}: {counts[key]:>5,}  ({100*counts[key]/n_valid:{fmt}}%)"
+        return f"  {label}:     0"
+
     lines += [
         "",
         "Classifications (ECDC — valid episodes only):",
-        f"  None             : {counts['none']:>5,}  ({100*counts['none']/n_valid:.1f}%)" if n_valid else "  None             :     0",
-        f"  Superficial SSI  : {counts['superficial']:>5,}  ({100*counts['superficial']/n_valid:.2f}%)" if n_valid else "  Superficial SSI  :     0",
-        f"  Deep SSI         : {counts['deep']:>5,}  ({100*counts['deep']/n_valid:.2f}%)" if n_valid else "  Deep SSI         :     0",
-        f"  Organ/Space SSI  : {counts['organ_space']:>5,}  ({100*counts['organ_space']/n_valid:.2f}%)" if n_valid else "  Organ/Space SSI  :     0",
-        f"  Overall SSI rate :  {100*rate:.2f}% (95% CI: {100*lo:.2f}-{100*hi:.2f}%)" if n_valid else "  Overall SSI rate :  N/A (no valid episodes)",
+        _pct("None            ", "none"),
+        _pct("Superficial SSI ", "superficial", ".2f"),
+        _pct("Deep SSI        ", "deep", ".2f"),
+        _pct("Organ/Space SSI ", "organ_space", ".2f"),
+        (
+            f"  Overall SSI rate :  {100*rate:.2f}% (95% CI: {100*lo:.2f}-{100*hi:.2f}%)"
+            if n_valid else "  Overall SSI rate :  N/A (no valid episodes)"
+        ),
         "",
         f"Review-required (borderline): {n_review:,} episodes",
         "",

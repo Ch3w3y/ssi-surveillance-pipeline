@@ -32,23 +32,30 @@ def results():
 def test_all_rows_in_output(results):
     assert len(results) == EXPECTED_ROWS
 
+
 @pytest.mark.requires_model
 def test_required_columns(results):
     for col in ["ssi_classification", "p_none", "confidence_zone", "review_required"]:
         assert col in results.columns
+
 
 @pytest.mark.requires_model
 def test_valid_labels(results):
     for label in results["ssi_classification"].dropna():
         assert label in VALID_LABELS, f"Unexpected: {label}"
 
+
 @pytest.mark.requires_model
 def test_probs_sum_to_one(results):
     text_rows = results[results["processing_mode"] == "text_only"]
     for _, row in text_rows.iterrows():
         if pd.notna(row["p_none"]):
-            total = row["p_none"] + row["p_superficial"] + row["p_deep"] + row["p_organ_space"]
+            total = (
+                row["p_none"] + row["p_superficial"]
+                + row["p_deep"] + row["p_organ_space"]
+            )
             assert abs(total - 1.0) < 1e-4
+
 
 @pytest.mark.requires_model
 def test_out_of_scope_flagged(results):
@@ -56,11 +63,13 @@ def test_out_of_scope_flagged(results):
     assert not oos.empty, "E007 not found in results"
     assert oos.iloc[0]["ssi_classification"] == "out_of_scope"
 
+
 @pytest.mark.requires_model
 def test_missing_date_flagged(results):
     row = results[results["episode_id"] == "E008"]
     assert not row.empty, "E008 not found in results"
     assert row.iloc[0]["ssi_classification"] == "missing_operation_date"
+
 
 @pytest.mark.requires_model
 def test_outside_window_flagged(results):

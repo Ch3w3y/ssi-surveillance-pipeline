@@ -1,7 +1,7 @@
 # tests/test_validator.py
 import pandas as pd
 import pytest
-from src.preprocessing.validator import validate_input, IN_SCOPE_CODES
+from src.preprocessing.validator import validate_input
 
 
 def make_row(**kwargs):

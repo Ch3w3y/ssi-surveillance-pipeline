@@ -29,7 +29,7 @@ def filter_mdt_review(df: pd.DataFrame) -> pd.DataFrame:
 
     Adds blank reviewer_notes column for clinical team annotation.
     """
-    review_df = df[df["review_required"] == True].copy()
+    review_df = df[df["review_required"].eq(True)].copy()
     prob_cols = [c for c in ["p_superficial", "p_deep", "p_organ_space"] if c in review_df.columns]
     if prob_cols:
         review_df["_max_ssi"] = review_df[prob_cols].max(axis=1)
