@@ -1,7 +1,7 @@
 # bert_SSI
 
-![CI](https://github.com/your-org/bert_SSI/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://codecov.io/gh/your-org/bert_SSI/badge.svg)
+![CI](https://github.com/Ch3w3y/ssi-surveillance-pipeline/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://codecov.io/gh/Ch3w3y/ssi-surveillance-pipeline/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)
 ![Licence](https://img.shields.io/badge/licence-Apache%202.0-green)
 
@@ -73,10 +73,11 @@ When criteria are met at multiple levels, only the deepest level is reported (EC
 
 ```bash
 # Install
-git clone https://github.com/your-org/bert_SSI.git
+git clone https://github.com/Ch3w3y/ssi-surveillance-pipeline.git
 cd bert_SSI
 pip install -e ".[dev]"
-python -m spacy download en_core_sci_sm  # scispaCy base model
+pip install "scispacy==0.5.4"
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 
 # Run the pipeline on a CSV of clinical notes
 python scripts/run_pipeline.py --input data/my_notes.csv --output results/
@@ -94,7 +95,7 @@ python scripts/run_pipeline.py --input data/my_notes.csv --output results/
 **Requirements:** Python 3.9–3.11, 8 GB RAM minimum, CPU inference supported.
 
 ```bash
-git clone https://github.com/your-org/bert_SSI.git
+git clone https://github.com/Ch3w3y/ssi-surveillance-pipeline.git
 cd bert_SSI
 pip install -e .
 ```
@@ -108,8 +109,8 @@ pip install -e ".[dev]"
 Install the scispaCy language model (required for NER):
 
 ```bash
-pip install scispacy
-pip install https://s3-us-west-2.amazonaws.com/ai2-s3-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+pip install "scispacy==0.5.4"
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 ```
 
 The classifier backbone (`Simonlee711/Clinical_ModernBERT`) is downloaded automatically from HuggingFace on first run (~400 MB). An internet connection is required for the first run; subsequent runs use the cached model.
@@ -260,10 +261,12 @@ python scripts/run_pipeline.py \
 ### Run via Python
 
 ```python
+import pandas as pd
 from src.pipeline.run import SSIPipeline
 
 pipeline = SSIPipeline.from_config("config.yaml")
-results = pipeline.run("data/my_notes.csv")
+df = pd.read_csv("data/my_notes.csv", dtype=str)
+results = pipeline.run(df)
 results.to_csv("results/ssi_linelist.csv", index=False)
 ```
 
@@ -497,14 +500,21 @@ bert_SSI/
 │   ├── run_pipeline.py
 │   └── annotate.py
 ├── tests/
-│   ├── test_preprocessing.py
-│   ├── test_ner.py
-│   ├── test_classifier.py
+│   ├── conftest.py
+│   ├── test_validator.py
+│   ├── test_text_cleaner.py
+│   ├── test_temporal.py
+│   ├── test_concatenator.py
+│   ├── test_preprocessor.py
+│   ├── test_ner_pipeline.py
 │   ├── test_structured.py
-│   ├── test_output.py
+│   ├── test_ecdc_gating.py
+│   ├── test_calibration.py
+│   ├── test_formatter.py
+│   ├── test_summary.py
 │   ├── test_pipeline.py
 │   └── smoke/
-│       ├── test_smoke_text_only.py
+│       ├── test_smoke_text_only.py      # requires_model — skip in CI
 │       ├── test_smoke_structured_only.py
 │       └── fixtures/synthetic_notes.csv
 └── .github/
