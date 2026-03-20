@@ -4,6 +4,7 @@ Handles encoding artefacts from NHS dictation software and document
 management systems: null bytes, form feeds, carriage returns, and
 excessive whitespace from copy-paste or OCR processes.
 """
+
 import re
 
 

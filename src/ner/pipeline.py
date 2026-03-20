@@ -13,10 +13,10 @@ en_core_sci_sm parser component (both set sentence boundaries).
 Instantiating NERPipeline loads the language model (~2-5 seconds).
 Instantiate once and reuse for batch processing.
 """
+
 from __future__ import annotations
 import medspacy
 from .entity_rules import ENTITY_PATTERNS, ENTITY_TYPES
-
 
 _CUSTOM_LABELS = set(ENTITY_TYPES)
 

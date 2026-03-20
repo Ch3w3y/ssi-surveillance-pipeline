@@ -6,6 +6,7 @@ ICD-10-CM uses T84.50-T84.54 (five chars). This module uses NHS codes.
 
 Classification follows ECDC hierarchy: report only the deepest level.
 """
+
 from __future__ import annotations
 
 # NHS ICD-10 code → (ssi_type, depth_level)

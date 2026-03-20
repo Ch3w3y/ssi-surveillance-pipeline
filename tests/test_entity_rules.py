@@ -4,9 +4,16 @@ from src.ner.entity_rules import ENTITY_PATTERNS, ENTITY_TYPES
 
 def test_all_entity_types_defined():
     expected = {
-        "WOUND_SIGN", "DISCHARGE", "WOUND_DISRUPTION", "ABSCESS",
-        "FEVER", "ANTIBIOTIC", "WOUND_TREATMENT", "MICROBIOLOGY",
-        "ANATOMICAL_DEPTH", "TEMPORAL",
+        "WOUND_SIGN",
+        "DISCHARGE",
+        "WOUND_DISRUPTION",
+        "ABSCESS",
+        "FEVER",
+        "ANTIBIOTIC",
+        "WOUND_TREATMENT",
+        "MICROBIOLOGY",
+        "ANATOMICAL_DEPTH",
+        "TEMPORAL",
     }
     assert set(ENTITY_TYPES) == expected
 

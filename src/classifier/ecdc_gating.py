@@ -4,6 +4,7 @@ All in-scope procedures (W37-W47) involve implants, so implant=True always.
 The 1-year window applies to deep incisional and organ/space SSI.
 Gating is unconditional — cannot be overridden by model confidence.
 """
+
 from __future__ import annotations
 
 

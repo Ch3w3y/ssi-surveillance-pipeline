@@ -40,9 +40,15 @@ ENTITY_PATTERNS = [
     {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "dehiscence"}]},
     {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "dehisced"}]},
     {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "gaping"}]},
-    {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "wound"}, {"LOWER": "breakdown"}]},
+    {
+        "label": "WOUND_DISRUPTION",
+        "pattern": [{"LOWER": "wound"}, {"LOWER": "breakdown"}],
+    },
     {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "wound"}, {"LOWER": "opened"}]},
-    {"label": "WOUND_DISRUPTION", "pattern": [{"LOWER": "wound"}, {"LOWER": "separation"}]},
+    {
+        "label": "WOUND_DISRUPTION",
+        "pattern": [{"LOWER": "wound"}, {"LOWER": "separation"}],
+    },
     # ABSCESS
     {"label": "ABSCESS", "pattern": [{"LOWER": "abscess"}]},
     {"label": "ABSCESS", "pattern": [{"LOWER": "collection"}]},
@@ -71,9 +77,15 @@ ENTITY_PATTERNS = [
     {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "dair"}]},
     {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "reoperation"}]},
     {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "re-operation"}]},
-    {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "wound"}, {"LOWER": "exploration"}]},
+    {
+        "label": "WOUND_TREATMENT",
+        "pattern": [{"LOWER": "wound"}, {"LOWER": "exploration"}],
+    },
     {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "irrigation"}]},
-    {"label": "WOUND_TREATMENT", "pattern": [{"LOWER": "wound"}, {"LOWER": "revision"}]},
+    {
+        "label": "WOUND_TREATMENT",
+        "pattern": [{"LOWER": "wound"}, {"LOWER": "revision"}],
+    },
     # MICROBIOLOGY
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "wound"}, {"LOWER": "swab"}]},
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "culture"}, {"LOWER": "positive"}]},
@@ -81,7 +93,10 @@ ENTITY_PATTERNS = [
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "mrsa"}]},
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "staph"}]},
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "staphylococcus"}]},
-    {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "organism"}, {"LOWER": "isolated"}]},
+    {
+        "label": "MICROBIOLOGY",
+        "pattern": [{"LOWER": "organism"}, {"LOWER": "isolated"}],
+    },
     {"label": "MICROBIOLOGY", "pattern": [{"LOWER": "bacteraemia"}]},
     # ANATOMICAL_DEPTH
     {"label": "ANATOMICAL_DEPTH", "pattern": [{"LOWER": "superficial"}]},
@@ -96,7 +111,16 @@ ENTITY_PATTERNS = [
     {"label": "TEMPORAL", "pattern": [{"LOWER": "post-operative"}]},
     {"label": "TEMPORAL", "pattern": [{"LOWER": "postoperative"}]},
     {"label": "TEMPORAL", "pattern": [{"LOWER": "post-op"}]},
-    {"label": "TEMPORAL", "pattern": [{"IS_DIGIT": True}, {"LOWER": "days"}, {"LOWER": "post"}]},
-    {"label": "TEMPORAL", "pattern": [{"IS_DIGIT": True}, {"LOWER": "weeks"}, {"LOWER": "post"}]},
-    {"label": "TEMPORAL", "pattern": [{"IS_DIGIT": True}, {"LOWER": "months"}, {"LOWER": "post"}]},
+    {
+        "label": "TEMPORAL",
+        "pattern": [{"IS_DIGIT": True}, {"LOWER": "days"}, {"LOWER": "post"}],
+    },
+    {
+        "label": "TEMPORAL",
+        "pattern": [{"IS_DIGIT": True}, {"LOWER": "weeks"}, {"LOWER": "post"}],
+    },
+    {
+        "label": "TEMPORAL",
+        "pattern": [{"IS_DIGIT": True}, {"LOWER": "months"}, {"LOWER": "post"}],
+    },
 ]

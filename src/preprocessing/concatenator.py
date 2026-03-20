@@ -4,6 +4,7 @@ Format A: single note_text column — passed through unchanged.
 Format B: multiple named columns — concatenated in configured order
           with section headers between non-null blocks.
 """
+
 from __future__ import annotations
 import pandas as pd
 

@@ -9,8 +9,9 @@ MOCK_LOGITS = np.array([[0.8, 0.1, 0.06, 0.04]])
 
 @pytest.fixture
 def pipeline_with_mock():
-    with patch("src.classifier.model.AutoModelForSequenceClassification") as MockModel, \
-         patch("src.classifier.model.AutoTokenizer") as MockTok:
+    with patch(
+        "src.classifier.model.AutoModelForSequenceClassification"
+    ) as MockModel, patch("src.classifier.model.AutoTokenizer") as MockTok:
         mock_out = MagicMock()
         mock_out.logits.detach.return_value.numpy.return_value = MOCK_LOGITS
         MockModel.from_pretrained.return_value = MagicMock(return_value=mock_out)
@@ -18,6 +19,7 @@ def pipeline_with_mock():
             return_value={"input_ids": MagicMock(), "attention_mask": MagicMock()}
         )
         from src.pipeline.run import SSIPipeline
+
         config = {
             "model": "Simonlee711/Clinical_ModernBERT",
             "processing_mode": "auto",
@@ -50,6 +52,7 @@ def test_required_output_columns(pipeline_with_mock, synthetic_df):
 
 def test_structured_only_mode(synthetic_df):
     from src.pipeline.run import SSIPipeline
+
     df = synthetic_df.drop(columns=["note_text"])
     df = df.copy()
     df["icd10_codes"] = "T81.4|Z96.6"

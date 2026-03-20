@@ -4,27 +4,38 @@ Validates pipeline structure and correctness — NOT classification accuracy.
 Requires HuggingFace model download on first run.
 Add @pytest.mark.requires_model to skip in CI.
 """
+
 import pandas as pd
 import pytest
 
 FIXTURE = "tests/smoke/fixtures/synthetic_notes.csv"
 EXPECTED_ROWS = 10  # number of rows in synthetic_notes.csv
 VALID_LABELS = {
-    "none", "superficial", "deep", "organ_space", "out_of_scope",
-    "outside_window", "missing_operation_date", "missing_note_date",
-    "invalid_dates", "insufficient_data",
+    "none",
+    "superficial",
+    "deep",
+    "organ_space",
+    "out_of_scope",
+    "outside_window",
+    "missing_operation_date",
+    "missing_note_date",
+    "invalid_dates",
+    "insufficient_data",
 }
 
 
 @pytest.fixture(scope="module")
 def results():
     from src.pipeline.run import SSIPipeline
-    pipeline = SSIPipeline({
-        "model": "Simonlee711/Clinical_ModernBERT",
-        "processing_mode": "text_only",
-        "text_columns": [],
-        "thresholds": {"auto_negative": 0.85, "auto_positive": 0.85},
-    })
+
+    pipeline = SSIPipeline(
+        {
+            "model": "Simonlee711/Clinical_ModernBERT",
+            "processing_mode": "text_only",
+            "text_columns": [],
+            "thresholds": {"auto_negative": 0.85, "auto_positive": 0.85},
+        }
+    )
     return pipeline.run(pd.read_csv(FIXTURE, dtype=str))
 
 
@@ -51,8 +62,10 @@ def test_probs_sum_to_one(results):
     for _, row in text_rows.iterrows():
         if pd.notna(row["p_none"]):
             total = (
-                row["p_none"] + row["p_superficial"]
-                + row["p_deep"] + row["p_organ_space"]
+                row["p_none"]
+                + row["p_superficial"]
+                + row["p_deep"]
+                + row["p_organ_space"]
             )
             assert abs(total - 1.0) < 1e-4
 

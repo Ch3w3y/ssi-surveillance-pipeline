@@ -1,5 +1,9 @@
 import numpy as np
-from src.classifier.calibration import apply_temperature, assign_confidence_zone, DEFAULT_THRESHOLDS
+from src.classifier.calibration import (
+    apply_temperature,
+    assign_confidence_zone,
+    DEFAULT_THRESHOLDS,
+)
 
 
 def test_temperature_1_unchanged():

@@ -1,4 +1,5 @@
 """Smoke tests for structured_only mode (ICD-10 codes, no text)."""
+
 import pandas as pd
 import pytest
 
@@ -9,12 +10,15 @@ EXPECTED_ROWS = 10  # number of rows in synthetic_notes.csv
 @pytest.fixture(scope="module")
 def results():
     from src.pipeline.run import SSIPipeline
+
     df = pd.read_csv(FIXTURE, dtype=str).drop(columns=["note_text"])
-    pipeline = SSIPipeline({
-        "processing_mode": "structured_only",
-        "text_columns": [],
-        "thresholds": {"auto_negative": 0.85, "auto_positive": 0.85},
-    })
+    pipeline = SSIPipeline(
+        {
+            "processing_mode": "structured_only",
+            "text_columns": [],
+            "thresholds": {"auto_negative": 0.85, "auto_positive": 0.85},
+        }
+    )
     return pipeline.run(df)
 
 
@@ -32,8 +36,12 @@ def test_mode_is_structured_only(results):
 
 def test_classified_rows_are_rule_based(results):
     flag_vals = {
-        "out_of_scope", "outside_window", "missing_operation_date",
-        "missing_note_date", "invalid_dates", "insufficient_data",
+        "out_of_scope",
+        "outside_window",
+        "missing_operation_date",
+        "missing_note_date",
+        "invalid_dates",
+        "insufficient_data",
     }
     classified = results[~results["ssi_classification"].isin(flag_vals)]
     assert len(classified) > 0, "No classified rows found — all rows were flagged"

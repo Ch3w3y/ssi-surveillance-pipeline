@@ -3,20 +3,38 @@
 Validates required columns, date logic, procedure scope, and text
 availability. Flags invalid rows in-place rather than dropping them.
 """
+
 import pandas as pd
 
 REQUIRED_COLUMNS = {
-    "patient_id", "episode_id", "operation_date", "note_date", "procedure_code",
+    "patient_id",
+    "episode_id",
+    "operation_date",
+    "note_date",
+    "procedure_code",
 }
 
 IN_SCOPE_CODES = {
-    "W37", "W38", "W39", "W40", "W41",
-    "W42", "W43", "W44", "W45", "W46", "W47",
+    "W37",
+    "W38",
+    "W39",
+    "W40",
+    "W41",
+    "W42",
+    "W43",
+    "W44",
+    "W45",
+    "W46",
+    "W47",
 }
 
 TEXT_COLUMNS = [
-    "note_text", "presenting_complaint", "clinical_findings",
-    "diagnosis", "management_plan", "discharge_summary",
+    "note_text",
+    "presenting_complaint",
+    "clinical_findings",
+    "diagnosis",
+    "management_plan",
+    "discharge_summary",
 ]
 
 

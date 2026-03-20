@@ -2,14 +2,19 @@
 import pandas as pd
 from src.preprocessing.preprocessor import Preprocessor
 
-CONFIG = {"text_columns": [{"field": "clinical_findings", "header": "CLINICAL FINDINGS"}]}
+CONFIG = {
+    "text_columns": [{"field": "clinical_findings", "header": "CLINICAL FINDINGS"}]
+}
 
 
 def make_row(**kwargs):
     defaults = {
-        "patient_id": "P001", "episode_id": "E001",
-        "operation_date": "2025-01-15", "note_date": "2025-01-25",
-        "procedure_code": "W38", "note_text": "Wound erythema noted.",
+        "patient_id": "P001",
+        "episode_id": "E001",
+        "operation_date": "2025-01-15",
+        "note_date": "2025-01-25",
+        "procedure_code": "W38",
+        "note_text": "Wound erythema noted.",
     }
     defaults.update(kwargs)
     return pd.DataFrame([defaults])

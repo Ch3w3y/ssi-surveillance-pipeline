@@ -1,12 +1,17 @@
 """Run summary text generation for surveillance reporting."""
+
 from __future__ import annotations
 import math
 import pandas as pd
 
 SSI_TYPES = ["superficial", "deep", "organ_space"]
 FLAG_TYPES = [
-    "out_of_scope", "missing_operation_date", "missing_note_date",
-    "invalid_dates", "insufficient_data", "outside_window",
+    "out_of_scope",
+    "missing_operation_date",
+    "missing_note_date",
+    "invalid_dates",
+    "insufficient_data",
+    "outside_window",
 ]
 
 
@@ -25,7 +30,9 @@ def generate_summary(df: pd.DataFrame, run_date: str, thresholds: dict) -> str:
     mode = df["processing_mode"].mode()[0] if total > 0 else "unknown"
     valid = df[~df["ssi_classification"].isin(FLAG_TYPES)]
     n_valid = len(valid)
-    counts = {t: int((valid["ssi_classification"] == t).sum()) for t in ["none"] + SSI_TYPES}
+    counts = {
+        t: int((valid["ssi_classification"] == t).sum()) for t in ["none"] + SSI_TYPES
+    }
     n_ssi = sum(counts[t] for t in SSI_TYPES)
     n_review = int(df["review_required"].eq(True).sum())
     rate = n_ssi / n_valid if n_valid > 0 else 0
@@ -57,7 +64,8 @@ def generate_summary(df: pd.DataFrame, run_date: str, thresholds: dict) -> str:
         _pct("Organ/Space SSI ", "organ_space", ".2f"),
         (
             f"  Overall SSI rate :  {100*rate:.2f}% (95% CI: {100*lo:.2f}-{100*hi:.2f}%)"
-            if n_valid else "  Overall SSI rate :  N/A (no valid episodes)"
+            if n_valid
+            else "  Overall SSI rate :  N/A (no valid episodes)"
         ),
         "",
         f"Review-required (borderline): {n_review:,} episodes",

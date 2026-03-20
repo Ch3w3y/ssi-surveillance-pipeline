@@ -6,9 +6,12 @@ from src.preprocessing.validator import validate_input
 
 def make_row(**kwargs):
     defaults = {
-        "patient_id": "P001", "episode_id": "E001",
-        "operation_date": "2025-01-15", "note_date": "2025-01-25",
-        "procedure_code": "W38", "note_text": "Wound healing well.",
+        "patient_id": "P001",
+        "episode_id": "E001",
+        "operation_date": "2025-01-15",
+        "note_date": "2025-01-25",
+        "procedure_code": "W38",
+        "note_text": "Wound healing well.",
     }
     defaults.update(kwargs)
     return pd.DataFrame([defaults])
@@ -36,7 +39,9 @@ def test_missing_note_date_flagged():
 
 
 def test_note_before_operation_flagged():
-    result = validate_input(make_row(operation_date="2025-02-01", note_date="2025-01-01"))
+    result = validate_input(
+        make_row(operation_date="2025-02-01", note_date="2025-01-01")
+    )
     assert result.loc[0, "ssi_classification"] == "invalid_dates"
 
 
@@ -53,7 +58,9 @@ def test_null_text_flagged():
 
 
 def test_same_day_note_valid():
-    result = validate_input(make_row(operation_date="2025-01-15", note_date="2025-01-15"))
+    result = validate_input(
+        make_row(operation_date="2025-01-15", note_date="2025-01-15")
+    )
     assert result.loc[0, "ssi_classification"] != "invalid_dates"
 
 
@@ -64,10 +71,17 @@ def test_validation_flag_matches_ssi_classification_on_invalid_row():
 
 def test_no_text_columns_not_flagged_as_insufficient():
     """Structured-only mode: no text columns present should not flag insufficient_data."""
-    df = pd.DataFrame([{
-        "patient_id": "P001", "episode_id": "E001",
-        "operation_date": "2025-01-15", "note_date": "2025-01-25",
-        "procedure_code": "W38", "icd10_codes": "T81.4",
-    }])
+    df = pd.DataFrame(
+        [
+            {
+                "patient_id": "P001",
+                "episode_id": "E001",
+                "operation_date": "2025-01-15",
+                "note_date": "2025-01-25",
+                "procedure_code": "W38",
+                "icd10_codes": "T81.4",
+            }
+        ]
+    )
     result = validate_input(df)
     assert result.loc[0, "ssi_classification"] == ""

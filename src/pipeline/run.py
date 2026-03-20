@@ -4,6 +4,7 @@ Coordinates preprocessing, NER, classification, and output formatting.
 NER and BERT run sequentially per note for memory efficiency on NHS
 workstation hardware (no batched GPU processing assumed).
 """
+
 from __future__ import annotations
 import pandas as pd
 import yaml
@@ -16,8 +17,12 @@ from ..classifier.calibration import assign_confidence_zone, DEFAULT_THRESHOLDS
 from ..output.formatter import format_linelist
 
 TEXT_COLUMNS = [
-    "note_text", "presenting_complaint", "clinical_findings",
-    "diagnosis", "management_plan", "discharge_summary",
+    "note_text",
+    "presenting_complaint",
+    "clinical_findings",
+    "diagnosis",
+    "management_plan",
+    "discharge_summary",
 ]
 
 
@@ -79,7 +84,11 @@ class SSIPipeline:
         configured = self.config.get("processing_mode", "auto")
         if configured != "auto":
             return configured
-        return "text_only" if any(c in df.columns for c in TEXT_COLUMNS) else "structured_only"
+        return (
+            "text_only"
+            if any(c in df.columns for c in TEXT_COLUMNS)
+            else "structured_only"
+        )
 
     def _run_text_classification(self, row: pd.Series) -> dict:
         """Run NER + BERT classifier on a single note row."""

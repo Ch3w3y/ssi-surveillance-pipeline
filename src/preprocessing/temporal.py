@@ -4,6 +4,7 @@ All in-scope procedures (W37-W47) involve prosthetic implants so the ECDC
 surveillance window for deep incisional and organ/space SSI extends to
 1 year (365 days) post-operatively.
 """
+
 from __future__ import annotations
 import pandas as pd
 

@@ -25,11 +25,15 @@ def test_format_a_unchanged():
 
 
 def test_format_b_concatenates_with_headers():
-    df = pd.DataFrame([{
-        "presenting_complaint": "wound pain",
-        "clinical_findings": "erythema",
-        "management_plan": None,
-    }])
+    df = pd.DataFrame(
+        [
+            {
+                "presenting_complaint": "wound pain",
+                "clinical_findings": "erythema",
+                "management_plan": None,
+            }
+        ]
+    )
     result = concatenate_text_columns(df, CONFIG)
     text = result.loc[0, "note_text"]
     assert "PRESENTING COMPLAINT" in text and "wound pain" in text

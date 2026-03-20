@@ -6,15 +6,19 @@ from unittest.mock import MagicMock, patch
 
 @pytest.fixture
 def mock_classifier():
-    with patch("src.classifier.model.AutoModelForSequenceClassification") as MockModel, \
-         patch("src.classifier.model.AutoTokenizer") as MockTokenizer:
+    with patch(
+        "src.classifier.model.AutoModelForSequenceClassification"
+    ) as MockModel, patch("src.classifier.model.AutoTokenizer") as MockTokenizer:
         mock_out = MagicMock()
-        mock_out.logits.detach.return_value.numpy.return_value = np.array([[1.5, 0.5, 0.3, 0.1]])
+        mock_out.logits.detach.return_value.numpy.return_value = np.array(
+            [[1.5, 0.5, 0.3, 0.1]]
+        )
         MockModel.from_pretrained.return_value = MagicMock(return_value=mock_out)
         MockTokenizer.from_pretrained.return_value = MagicMock(
             return_value={"input_ids": MagicMock(), "attention_mask": MagicMock()}
         )
         from src.classifier.model import ClinicalBERTClassifier
+
         yield ClinicalBERTClassifier("Simonlee711/Clinical_ModernBERT")
 
 

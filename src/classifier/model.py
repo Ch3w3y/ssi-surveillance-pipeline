@@ -8,6 +8,7 @@ Wraps HuggingFace AutoModelForSequenceClassification with:
 The model is downloaded from HuggingFace Hub on first instantiation (~400 MB).
 Subsequent runs use the local HuggingFace cache.
 """
+
 from __future__ import annotations
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from .calibration import apply_temperature, DEFAULT_THRESHOLDS
@@ -25,7 +26,9 @@ class ClinicalBERTClassifier:
         thresholds: Triage threshold dict.
     """
 
-    def __init__(self, model_name: str, temperature: float = 1.0, thresholds: dict | None = None):
+    def __init__(
+        self, model_name: str, temperature: float = 1.0, thresholds: dict | None = None
+    ):
         self.model_name = model_name
         self.temperature = temperature
         self.thresholds = thresholds or DEFAULT_THRESHOLDS
@@ -58,8 +61,11 @@ class ClinicalBERTClassifier:
             f"[DAYS_POST_OP: {days_post_op if days_post_op is not None else 'unknown'}] "
             f"[WINDOW: {ecdc_window}] {text}"
         )
-        inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True, max_length=8192)
+        inputs = self.tokenizer(
+            input_text, return_tensors="pt", truncation=True, max_length=8192
+        )
         import torch
+
         with torch.no_grad():
             outputs = self.model(**inputs)
         logits = outputs.logits.detach().numpy()[0]

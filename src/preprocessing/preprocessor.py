@@ -3,6 +3,7 @@
 Runs: validation → concatenation → text cleaning → temporal
 features → procedure metadata → ECDC window gating.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,7 +18,9 @@ from .temporal import compute_days_post_op, get_ecdc_window
 _OPCS4_REF = None
 
 # Resolve reference CSV relative to this file so tests run from any cwd.
-_OPCS4_CSV = Path(__file__).resolve().parents[2] / "data" / "reference" / "opcs4_orthopaedic.csv"
+_OPCS4_CSV = (
+    Path(__file__).resolve().parents[2] / "data" / "reference" / "opcs4_orthopaedic.csv"
+)
 
 
 def _load_opcs4() -> pd.DataFrame:
@@ -75,6 +78,8 @@ class Preprocessor:
         return df
 
     def _flag_outside_window(self, df: pd.DataFrame) -> pd.DataFrame:
-        mask = (df["ssi_classification"] == "") & (df["ecdc_window_flag"] == "outside_window")
+        mask = (df["ssi_classification"] == "") & (
+            df["ecdc_window_flag"] == "outside_window"
+        )
         df.loc[mask, "ssi_classification"] = "outside_window"
         return df

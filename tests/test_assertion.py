@@ -3,7 +3,9 @@ from src.ner.assertion import format_entity_output
 
 
 def test_affirmed_entity_formatted():
-    entities = [{"text": "purulent discharge", "label": "DISCHARGE", "assertion": "affirmed"}]
+    entities = [
+        {"text": "purulent discharge", "label": "DISCHARGE", "assertion": "affirmed"}
+    ]
     pairs, snippets = format_entity_output(entities)
     assert "DISCHARGE:affirmed" in pairs
     assert "purulent discharge" in snippets
