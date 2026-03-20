@@ -31,8 +31,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install scispacy
-          pip install https://s3-us-west-2.amazonaws.com/ai2-s3-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+          pip install "scispacy==0.5.4"
+          pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 
       - name: Lint
         run: flake8 src/ tests/ --max-line-length=100
