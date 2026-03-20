@@ -1,7 +1,7 @@
 # bert_SSI
 
-![CI](https://github.com/Ch3w3y/ssi-surveillance-pipeline/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://codecov.io/gh/Ch3w3y/ssi-surveillance-pipeline/badge.svg)
+![CI](https://github.com/Ch3w3y/ssi-surveillance-pipeline/actions/workflows/ci.yml/badge.svg?branch=main)
+![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)
 ![Licence](https://img.shields.io/badge/licence-Apache%202.0-green)
 

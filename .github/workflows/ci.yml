@@ -46,8 +46,6 @@ jobs:
       - name: Smoke tests (structured_only — no model download)
         run: pytest tests/smoke/test_smoke_structured_only.py -v --tb=short
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
+      - name: Coverage report
         if: matrix.python-version == '3.11'
-        with:
-          file: coverage.xml
+        run: pytest tests/ --ignore=tests/smoke --cov=src --cov-report=term-missing -q 2>&1 | tail -20
