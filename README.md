@@ -564,14 +564,12 @@ This licence is compatible with NHS and public sector reuse and permits commerci
 If you use this tool in research, please cite:
 
 ```bibtex
-@article{bert_ssi_2026,
-  title   = {Automated Surveillance of Surgical Site Infections Using Transformer-based
-             Natural Language Processing: A Reproducible Pipeline for NHS Administrative
-             and Free-text Data},
-  author  = {[Authors]},
-  journal = {[Journal]},
+@software{ssi_surveillance_pipeline,
+  title   = {ssi-surveillance-pipeline: Automated SSI Surveillance for NHS Orthopaedic Data},
+  author  = {{Ch3w3y}},
   year    = {2026},
-  doi     = {[DOI]}
+  url     = {https://github.com/Ch3w3y/ssi-surveillance-pipeline},
+  license = {Apache-2.0}
 }
 ```
 
